@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="KanniMeat.Api/KanniMeat.Api.csproj" />
+  <Project Path="KanniMeat.Application/KanniMeat.Application.csproj" />
+  <Project Path="KanniMeat.Domain/KanniMeat.Domain.csproj" />
+  <Project Path="KanniMeat.Infrastructure/KanniMeat.Infrastructure.csproj" />
+</Solution>
