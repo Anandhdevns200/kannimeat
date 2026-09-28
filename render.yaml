@@ -1,0 +1,71 @@
+# Render blueprint for KanniMeat.
+#
+# Two independent services:
+#   1. kannimeat-web  - Angular 19 SPA as a Render Static Site (free, no database).
+#   2. kannimeat-api  - ASP.NET Core 10 API as a Docker web service.
+#
+# The API requires SQL Server, which Render does not host. Supply
+# ConnectionStrings__DefaultConnection with an externally hosted SQL Server
+# (for example Azure SQL) before expecting the data endpoints to respond.
+
+services:
+  # ---------------------------------------------------------------- SPA
+  - type: web
+    name: kannimeat-web
+    runtime: static
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist/b2bapp/browser
+    buildFilter:
+      paths:
+        - client/package.json
+        - client/package-lock.json
+      ignoredPaths:
+        - server/**
+        - Dockerfile
+    # Angular uses path-based routing, so unknown routes must fall back to
+    # index.html instead of returning 404.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+  # ---------------------------------------------------------------- API
+  - type: web
+    name: kannimeat-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: ohio
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # Kestrel must bind the port Render routes traffic to.
+      - key: ASPNETCORE_HTTP_PORTS
+        value: "10000"
+      # Symmetric signing key. Generated once and kept stable across deploys.
+      - key: Jwt__Key
+        generateValue: true
+      - key: Jwt__Issuer
+        value: KanniMeat
+      - key: Jwt__Audience
+        value: KanniMeatClient
+      - key: Jwt__ExpiryMinutes
+        value: "240"
+      - key: Jwt__RefreshTokenDays
+        value: "14"
+      # Create the schema on boot. The project has no EF Core migrations, so this
+      # is the only way to provision the database.
+      - key: Database__InitializeOnStartup
+        value: "true"
+      # Set this to the deployed SPA origin, e.g. https://kannimeat-web.onrender.com
+      - key: Cors__AllowedOrigins__0
+        sync: false
+      # Supply an externally hosted SQL Server connection string.
+      - key: ConnectionStrings__DefaultConnection
+        sync: false

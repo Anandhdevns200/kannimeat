@@ -1,0 +1,18 @@
+# The API image only needs the .NET sources.
+client/
+node_modules/
+dist/
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
+**/.vscode/
+**/.angular/
+**/android/
+**/ios/
+.git/
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+render.yaml
