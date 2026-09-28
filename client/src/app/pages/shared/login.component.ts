@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MaterialModule } from '../../shared/material.module';
 import { AuthService } from '../../core/services/auth.service';
+import { ApiHealth, ApiHealthService } from '../../core/services/api-health.service';
 import { ToastService } from '../../core/services/toast.service';
 import { SystemUser } from '../../core/models';
 
@@ -38,6 +39,12 @@ import { SystemUser } from '../../core/models';
         <div class="foot-links">
           <a routerLink="/"><mat-icon style="font-size:15px;vertical-align:-2px">arrow_back</mat-icon> Back to Website</a>
         </div>
+        <div class="api" [class.online]="api?.status === 'online'">
+          <span class="dot"></span>
+          <span *ngIf="api?.status === 'checking'">Checking API…</span>
+          <span *ngIf="api?.status === 'online'">API online — {{ api?.baseUrl }}</span>
+          <span *ngIf="api?.status === 'offline'">API offline — {{ api?.baseUrl }} <em>({{ api?.detail }})</em></span>
+        </div>
       </div>
     </div>
   `,
@@ -57,6 +64,10 @@ import { SystemUser } from '../../core/models';
       .role b { font-size: 13.5px; }
       .who { font-size: 11px; }
       .foot-links { margin-top: 18px; text-align: center; font-size: 13.5px; color: var(--brand-600); font-weight: 600; }
+      .api { margin-top: 14px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--slate-500); word-break: break-all; }
+      .api .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--slate-300); flex: 0 0 auto; }
+      .api.online .dot { background: #16a34a; }
+      .api em { font-style: normal; opacity: .8; }
       @media (max-width: 620px) { .grid { grid-template-columns: 1fr 1fr; } }
     `,
   ],
@@ -65,6 +76,14 @@ export class LoginPage {
   private auth = inject(AuthService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private apiHealth = inject(ApiHealthService);
+
+  api: ApiHealth | null = null;
+
+  constructor() {
+    this.api = { status: 'checking', baseUrl: this.apiHealth.baseUrl };
+    this.apiHealth.check().subscribe((r) => (this.api = r));
+  }
 
   roles = [
     { icon: '🛒', label: 'Customer', who: 'Anand Krishnan', role: 'CUSTOMER' },
